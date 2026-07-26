@@ -1,4 +1,4 @@
-// API Nexus Platform Engine v10.0 (View Toggle Bug Fix & Mobile Table Optimization)
+// API Nexus Platform Engine v11.0 (Guaranteed Table View Rendering Engine)
 
 // State Management
 let currentTheme = localStorage.getItem('api_nexus_theme') || 'dark';
@@ -509,10 +509,23 @@ function renderApis() {
     return;
   }
 
+  // GUARANTEED VIEW TOGGLE RENDERING
   if (currentView === 'grid') {
-    if (gridContainer) gridContainer.innerHTML = currentSlice.map(api => renderCardHtml(api)).join('');
+    if (gridContainer) {
+      gridContainer.style.display = 'grid';
+      gridContainer.innerHTML = currentSlice.map(api => renderCardHtml(api)).join('');
+    }
+    if (tableContainer) {
+      tableContainer.style.display = 'none';
+    }
   } else {
-    if (tableContainer) tableContainer.innerHTML = renderTableHtml(currentSlice);
+    if (gridContainer) {
+      gridContainer.style.display = 'none';
+    }
+    if (tableContainer) {
+      tableContainer.style.display = 'block';
+      tableContainer.innerHTML = renderTableHtml(currentSlice);
+    }
   }
 
   renderPagination(totalItems, startIndex + 1, endIndex);
@@ -621,6 +634,34 @@ function renderCardHtml(api) {
 }
 
 function renderTableHtml(apis) {
+  if (!apis || apis.length === 0) return '<div style="text-align:center; padding: 2rem; color: var(--text-muted);">No APIs available.</div>';
+
+  const rowsHtml = apis.map(api => {
+    const isFav = favoritesSet.has(api.id);
+    return `
+      <tr>
+        <td><strong style="color: var(--text-main); font-size: 0.95rem;">${escapeHtml(api.name)}</strong></td>
+        <td style="color: var(--text-muted);">${escapeHtml(api.provider || 'Provider')}</td>
+        <td><span class="category-tag">${escapeHtml(api.category)}</span></td>
+        <td><i class="fa-solid fa-star" style="color: var(--accent-amber);"></i> ${api.rating || 4.5}</td>
+        <td style="color: var(--accent-cyan); font-weight: 600;">${api.responseTime || 30} ms</td>
+        <td style="color: var(--accent-emerald); font-weight: 600;">${api.uptime || '99.99%'}</td>
+        <td><span class="badge badge-verified">${escapeHtml(api.authType || 'None')}</span></td>
+        <td><span style="color: var(--accent-emerald); font-weight: 600;">${escapeHtml(api.pricingType || 'Free')}</span></td>
+        <td>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn-card btn-card-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="openApiModal('${api.id}')">
+              <i class="fa-solid fa-layer-group"></i> Inspect
+            </button>
+            <button class="fav-heart-btn ${isFav ? 'active' : ''}" style="min-width: 28px; min-height: 28px;" onclick="toggleFavorite('${api.id}', event)" title="Toggle Favorite">
+              <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
   return `
     <table class="structured-table">
       <thead>
@@ -631,36 +672,13 @@ function renderTableHtml(apis) {
           <th>Rating</th>
           <th>Latency</th>
           <th>Uptime</th>
-          <th>Auth</th>
+          <th>Auth Method</th>
           <th>Pricing</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        ${apis.map(api => {
-          const isFav = favoritesSet.has(api.id);
-          return `
-          <tr>
-            <td><strong style="color: var(--text-main);">${escapeHtml(api.name)}</strong></td>
-            <td style="color: var(--text-muted);">${escapeHtml(api.provider || 'Provider')}</td>
-            <td><span class="category-tag">${escapeHtml(api.category)}</span></td>
-            <td><i class="fa-solid fa-star" style="color: var(--accent-amber);"></i> ${api.rating || 4.5}</td>
-            <td style="color: var(--accent-cyan); font-weight: 600;">${api.responseTime || 30} ms</td>
-            <td style="color: var(--accent-emerald); font-weight: 600;">${api.uptime || '99.99%'}</td>
-            <td>${escapeHtml(api.authType || 'None')}</td>
-            <td><span style="color: var(--accent-emerald); font-weight: 600;">${escapeHtml(api.pricingType || 'Free')}</span></td>
-            <td>
-              <div style="display: flex; gap: 0.4rem; align-items: center;">
-                <button class="btn-card btn-card-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="openApiModal('${api.id}')">
-                  Inspect
-                </button>
-                <button class="fav-heart-btn ${isFav ? 'active' : ''}" style="min-width: 28px; min-height: 28px;" onclick="toggleFavorite('${api.id}', event)" title="Toggle Favorite">
-                  <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `}).join('')}
+        ${rowsHtml}
       </tbody>
     </table>
   `;
@@ -1125,11 +1143,6 @@ function setView(view) {
   currentView = view;
   document.getElementById('btn-view-grid')?.classList.toggle('active', view === 'grid');
   document.getElementById('btn-view-table')?.classList.toggle('active', view === 'table');
-  
-  const gridContainer = document.getElementById('api-grid-container');
-  const tableContainer = document.getElementById('api-table-container');
-  if (gridContainer) gridContainer.style.display = view === 'grid' ? 'grid' : 'none';
-  if (tableContainer) tableContainer.style.display = view === 'table' ? 'block' : 'none';
   
   renderApis();
 }
