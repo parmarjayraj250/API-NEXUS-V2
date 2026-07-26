@@ -28,7 +28,7 @@
         </div>
         <div>
           <span class="logo-text">API NEXUS</span>
-          <span class="logo-badge">Hub v3.0</span>
+          <span class="logo-badge">Hub v4.0</span>
         </div>
       </a>
 
@@ -92,10 +92,11 @@
 
   <!-- Search & Multi-Facet Controls Container -->
   <section class="controls-container">
-    <!-- Live Search Input with Autocomplete -->
+    <!-- Live Search Input with Clear Icon & Autocomplete -->
     <div class="search-box-wrapper">
       <i class="fa-solid fa-magnifying-glass search-icon"></i>
       <input type="text" id="search-input" class="search-input" placeholder="Search 5,000+ free APIs by name, category, tags, or provider (e.g. 'OpenAI', 'Crypto', 'Geocoding', 'NASA')..." autocomplete="off" />
+      <button class="search-clear-btn" id="search-clear-btn" title="Clear search text" onclick="clearSearchInput()" style="display: none;">&times;</button>
       <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
     </div>
 

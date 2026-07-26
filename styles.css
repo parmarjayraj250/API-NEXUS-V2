@@ -349,7 +349,7 @@ header {
 
 .search-input {
   width: 100%;
-  padding: 1.1rem 1.5rem 1.1rem 3.5rem;
+  padding: 1.1rem 3.5rem 1.1rem 3.5rem;
   background: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -373,6 +373,23 @@ header {
   color: var(--text-dim);
   font-size: 1.3rem;
   pointer-events: none;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.search-clear-btn:hover {
+  color: var(--text-main);
 }
 
 /* Search Autocomplete Suggestions */
