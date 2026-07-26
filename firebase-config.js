@@ -1,6 +1,6 @@
 // ==========================================================================
 // FIREBASE v10 AUTHENTICATION & FIRESTORE CONFIGURATION
-// Paste your exact config from Firebase Console -> Project Settings -> General
+// Configured for Firebase Project: API-Finder (api-finder-5173b)
 // ==========================================================================
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -20,14 +20,14 @@ import {
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- STEP 1: Paste Your Firebase Project Keys Here ---
+// --- Firebase Configuration (Extracted from Project ID: api-finder-5173b) ---
 const defaultFirebaseConfig = {
-  apiKey: "AIzaSyDemoKey_ReplaceWithYourFirebaseKey",
-  authDomain: "api-finder-app.firebaseapp.com",
-  projectId: "api-finder-app",
-  storageBucket: "api-finder-app.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:demo1234567890"
+  apiKey: "PASTE_YOUR_WEB_API_KEY_HERE", // Scroll down to 'Your apps' on Project Settings page to copy your Web API Key
+  authDomain: "api-finder-5173b.firebaseapp.com",
+  projectId: "api-finder-5173b",
+  storageBucket: "api-finder-5173b.appspot.com",
+  messagingSenderId: "17282514910",
+  appId: "1:17282514910:web:api-finder-web"
 };
 
 // Use window.firebaseConfig if defined in window, otherwise defaultFirebaseConfig
@@ -93,7 +93,7 @@ export async function signInWithGoogleFirebase() {
     console.error("❌ Firebase Auth Error:", error.code, error.message);
     
     if (error.code === 'auth/api-key-not-valid' || error.message.includes('API key')) {
-      const msg = "Firebase Notice: Replace placeholder apiKey in firebase-config.js with your key from Firebase Console.";
+      const msg = "Firebase Notice: Please scroll down to 'Your apps' on Project Settings page and copy your Web API Key into firebase-config.js";
       console.warn(msg);
       if (window.showToast) window.showToast(msg);
       if (window.fallbackSocialLogin) window.fallbackSocialLogin('Google');
