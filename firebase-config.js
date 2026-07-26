@@ -1,6 +1,6 @@
 // ==========================================================================
 // FIREBASE v10 AUTHENTICATION & FIRESTORE CONFIGURATION
-// Configured for Firebase Project: API-Finder (api-finder-5173b)
+// Configured with exact Firebase Console credentials for API-Finder (api-finder-5173b)
 // ==========================================================================
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -20,14 +20,15 @@ import {
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- Firebase Configuration (Extracted from Firebase Console) ---
+// --- Exact Firebase Configuration from Firebase Console ---
 const defaultFirebaseConfig = {
-  apiKey: "PASTE_YOUR_WEB_API_KEY_HERE", // Copy apiKey from SDK setup & configuration box
+  apiKey: "AIzaSyDYR1-0A0xLoxvRRyy-_l-UMbZ5Hr95qzE",
   authDomain: "api-finder-5173b.firebaseapp.com",
   projectId: "api-finder-5173b",
-  storageBucket: "api-finder-5173b.appspot.com",
+  storageBucket: "api-finder-5173b.firebasestorage.app",
   messagingSenderId: "17282514910",
-  appId: "1:17282514910:web:1e1ddeb6125db58a45e74f" // Exact App ID from Firebase Console
+  appId: "1:17282514910:web:1e1ddeb6125db58a45e74f",
+  measurementId: "G-VNNDF88WSH"
 };
 
 // Use window.firebaseConfig if defined in window, otherwise defaultFirebaseConfig
@@ -85,19 +86,14 @@ export async function signInWithGoogleFirebase() {
     }
 
     if (window.showToast) {
-      window.showToast(`Welcome ${user.displayName || user.email}! Signed in via Firebase.`);
+      window.showToast(`Welcome ${user.displayName || user.email}! Firebase Google Sign-In Successful.`);
     }
 
     return user;
   } catch (error) {
     console.error("❌ Firebase Auth Error:", error.code, error.message);
     
-    if (error.code === 'auth/api-key-not-valid' || error.message.includes('API key')) {
-      const msg = "Firebase Notice: Copy your apiKey from SDK setup & configuration in Firebase Console into firebase-config.js";
-      console.warn(msg);
-      if (window.showToast) window.showToast(msg);
-      if (window.fallbackSocialLogin) window.fallbackSocialLogin('Google');
-    } else if (error.code === 'auth/popup-closed-by-user') {
+    if (error.code === 'auth/popup-closed-by-user') {
       if (window.showToast) window.showToast("Google Sign-In popup closed.");
     } else {
       if (window.showToast) window.showToast(`Firebase Auth: ${error.message}`);
