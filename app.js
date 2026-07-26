@@ -1,4 +1,4 @@
-// API Nexus Platform Engine v6.0 (Firebase Auth & Firestore Sync Engine)
+// API Nexus Platform Engine v6.5 (Firebase Auth & Firestore Sync Engine)
 
 // State Management
 let currentTheme = localStorage.getItem('api_nexus_theme') || 'dark';
@@ -113,7 +113,7 @@ function openAuthModal(reasonMessage) {
   if (msgEl && reasonMessage) {
     msgEl.textContent = reasonMessage;
   } else if (msgEl) {
-    msgEl.textContent = "Security Notice: Please register or sign in with Google, Facebook, or Microsoft to unlock unlimited API details and sandbox access.";
+    msgEl.textContent = "Security Notice: Please register or sign in with Google to unlock unlimited API details and sandbox access.";
   }
   if (modal) modal.classList.add('active');
 }
@@ -125,22 +125,23 @@ function closeAuthModal() {
 window.closeAuthModal = closeAuthModal;
 
 async function loginWithProvider(providerName) {
-  if (providerName === 'Google' && window.signInWithGoogleFirebase) {
-    try {
-      showToast("Opening Firebase Google Sign-In popup...");
-      await window.signInWithGoogleFirebase();
-      return;
-    } catch (err) {
-      console.warn("Firebase Auth fallback active.");
+  if (providerName === 'Google') {
+    if (window.signInWithGoogleFirebase) {
+      try {
+        await window.signInWithGoogleFirebase();
+        return;
+      } catch (err) {
+        console.error("Firebase Google Auth error:", err);
+        return;
+      }
     }
   }
 
-  // Fallback sign in for social buttons or demo environments
-  fallbackGoogleLogin(providerName);
+  fallbackSocialLogin(providerName);
 }
 window.loginWithProvider = loginWithProvider;
 
-function fallbackGoogleLogin(providerName = 'Google') {
+function fallbackSocialLogin(providerName = 'Google') {
   currentUser = {
     uid: `usr_${Date.now()}`,
     name: `${providerName} Developer`,
@@ -160,7 +161,7 @@ function fallbackGoogleLogin(providerName = 'Google') {
     openApiModal(target, true);
   }
 }
-window.fallbackGoogleLogin = fallbackGoogleLogin;
+window.fallbackSocialLogin = fallbackSocialLogin;
 
 function registerWithEmail(event) {
   if (event) event.preventDefault();

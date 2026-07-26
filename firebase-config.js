@@ -16,7 +16,7 @@ import {
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Default Firebase Configuration (can be overridden by window.firebaseConfig)
+// Firebase Configuration
 const defaultFirebaseConfig = {
   apiKey: "AIzaSyDemoKey_ReplaceWithYourFirebaseKey",
   authDomain: "api-finder-app.firebaseapp.com",
@@ -42,12 +42,19 @@ googleProvider.setCustomParameters({
 window.firebaseAuth = auth;
 window.firebaseDb = db;
 
-// --- Handle Google Sign-In Popup ---
+/**
+ * Executes official Firebase Google Authentication Popup using signInWithPopup(auth, new GoogleAuthProvider())
+ * Creates or updates Firestore document at users/{uid} upon successful login.
+ */
 export async function signInWithGoogleFirebase() {
   try {
+    // Official Firebase Google Popup Sign-In
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
+    console.log("Firebase Google Authentication Successful for user:", user.email, "UID:", user.uid);
+
+    // Reference Firestore user document: users/{user.uid}
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
@@ -62,31 +69,28 @@ export async function signInWithGoogleFirebase() {
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp()
       });
-      console.log("Created new user document in Firestore for:", user.email);
+      console.log("Firestore: Created new user document for UID:", user.uid);
     } else {
       // Update lastLogin timestamp for existing user
       await updateDoc(userRef, {
         lastLogin: serverTimestamp()
       });
-      console.log("Updated lastLogin timestamp for existing user:", user.email);
+      console.log("Firestore: Updated lastLogin timestamp for UID:", user.uid);
     }
 
-    if (window.onFirebaseUserLoginSuccess) {
-      window.onFirebaseUserLoginSuccess(user);
+    if (window.showToast) {
+      window.showToast(`Welcome ${user.displayName || user.email}! Firebase Google Sign-In Successful.`);
     }
 
     return user;
   } catch (error) {
-    console.warn("Firebase Google Auth Notice:", error.message);
+    console.error("Firebase Auth Error:", error.code, error.message);
     if (error.code === 'auth/popup-closed-by-user') {
-      if (window.showToast) window.showToast("Sign in popup closed before completion.");
-    } else if (error.code === 'auth/api-key-not-valid' || error.message.includes('API key')) {
-      console.info("Using local authentication fallback mode.");
-      if (window.fallbackGoogleLogin) {
-        window.fallbackGoogleLogin();
-      }
+      if (window.showToast) window.showToast("Sign in popup was closed before completing login.");
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      console.warn("Popup request cancelled.");
     } else {
-      if (window.showToast) window.showToast(`Auth error: ${error.message}`);
+      if (window.showToast) window.showToast(`Firebase Auth Error: ${error.message}`);
     }
     throw error;
   }
@@ -100,17 +104,17 @@ export async function firebaseSignOutUser() {
       window.onFirebaseUserSignOut();
     }
   } catch (err) {
-    console.error("Error signing out:", err);
+    console.error("Error signing out from Firebase:", err);
   }
 }
 
 // --- Persistent Auth Observer ---
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    console.log("Firebase Auth State: Signed In", user.email);
+    console.log("Firebase Auth State Changed: User Signed In ->", user.email);
     const userData = {
       uid: user.uid,
-      name: user.displayName || "Developer User",
+      name: user.displayName || user.email || "Developer User",
       email: user.email || "",
       photoURL: user.photoURL || "",
       provider: "Google"
@@ -120,7 +124,7 @@ onAuthStateChanged(auth, async (user) => {
     if (window.updateAuthUI) window.updateAuthUI();
     if (window.closeAuthModal) window.closeAuthModal();
   } else {
-    console.log("Firebase Auth State: Signed Out / Guest");
+    console.log("Firebase Auth State Changed: User Signed Out");
   }
 });
 
