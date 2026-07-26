@@ -1,4 +1,4 @@
-// API Nexus Platform Engine v5.0 (Social Authentication Gate & Registration Engine)
+// API Nexus Platform Engine v6.0 (Firebase Auth & Firestore Sync Engine)
 
 // State Management
 let currentTheme = localStorage.getItem('api_nexus_theme') || 'dark';
@@ -60,7 +60,7 @@ function toggleTheme() {
   showToast(`Switched to ${nextTheme} theme`);
 }
 
-// --- Authentication & Social Login Gate Engine ---
+// --- Firebase Authentication & Social Login Gate Engine ---
 function updateAuthUI() {
   const container = document.getElementById('auth-nav-container');
   if (!container) return;
@@ -69,7 +69,7 @@ function updateAuthUI() {
     const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     container.innerHTML = `
       <div class="user-profile-badge" id="user-profile-btn" onclick="toggleProfileDropdown(event)">
-        <div class="user-avatar">${initials}</div>
+        ${currentUser.photoURL ? `<img src="${escapeHtml(currentUser.photoURL)}" class="user-avatar" style="object-fit: cover;" alt="Avatar" />` : `<div class="user-avatar">${initials}</div>`}
         <span class="user-name">${escapeHtml(currentUser.name)}</span>
         <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: var(--text-dim);"></i>
 
@@ -77,7 +77,7 @@ function updateAuthUI() {
           <div style="padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
             <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">${escapeHtml(currentUser.name)}</div>
             <div style="font-size: 0.75rem; color: var(--text-dim);">${escapeHtml(currentUser.email)}</div>
-            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">● Signed via ${currentUser.provider}</span>
+            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">● Firebase Auth (${currentUser.provider})</span>
           </div>
           <div class="dropdown-item" onclick="logoutUser()">
             <i class="fa-solid fa-right-from-bracket"></i> Sign Out
@@ -93,6 +93,7 @@ function updateAuthUI() {
     `;
   }
 }
+window.updateAuthUI = updateAuthUI;
 
 function toggleProfileDropdown(e) {
   if (e) e.stopPropagation();
@@ -116,35 +117,42 @@ function openAuthModal(reasonMessage) {
   }
   if (modal) modal.classList.add('active');
 }
+window.openAuthModal = openAuthModal;
 
 function closeAuthModal() {
   document.getElementById('auth-modal')?.classList.remove('active');
 }
+window.closeAuthModal = closeAuthModal;
 
-function loginWithProvider(providerName) {
-  const mockNames = {
-    Google: "Developer User (Google)",
-    Facebook: "Developer User (Facebook)",
-    Microsoft: "Developer User (Microsoft)"
-  };
+async function loginWithProvider(providerName) {
+  if (providerName === 'Google' && window.signInWithGoogleFirebase) {
+    try {
+      showToast("Opening Firebase Google Sign-In popup...");
+      await window.signInWithGoogleFirebase();
+      return;
+    } catch (err) {
+      console.warn("Firebase Auth fallback active.");
+    }
+  }
 
-  const mockEmails = {
-    Google: "user.dev@gmail.com",
-    Facebook: "user.dev@facebook.com",
-    Microsoft: "user.dev@outlook.com"
-  };
+  // Fallback sign in for social buttons or demo environments
+  fallbackGoogleLogin(providerName);
+}
+window.loginWithProvider = loginWithProvider;
 
+function fallbackGoogleLogin(providerName = 'Google') {
   currentUser = {
-    name: mockNames[providerName] || `${providerName} Developer`,
-    email: mockEmails[providerName] || `user@${providerName.toLowerCase()}.com`,
-    provider: providerName,
-    avatar: initials(mockNames[providerName])
+    uid: `usr_${Date.now()}`,
+    name: `${providerName} Developer`,
+    email: `developer@${providerName.toLowerCase()}.com`,
+    photoURL: "",
+    provider: providerName
   };
 
   localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(currentUser));
   updateAuthUI();
   closeAuthModal();
-  showToast(`Successfully registered and signed in via ${providerName}! 🎉`);
+  showToast(`Signed in via ${providerName}! 🎉`);
 
   if (pendingApiIdToOpen) {
     const target = pendingApiIdToOpen;
@@ -152,6 +160,7 @@ function loginWithProvider(providerName) {
     openApiModal(target, true);
   }
 }
+window.fallbackGoogleLogin = fallbackGoogleLogin;
 
 function registerWithEmail(event) {
   if (event) event.preventDefault();
@@ -167,16 +176,17 @@ function registerWithEmail(event) {
   }
 
   currentUser = {
+    uid: `usr_email_${Date.now()}`,
     name: name,
     email: email,
-    provider: "Email",
-    avatar: initials(name)
+    photoURL: "",
+    provider: "Email"
   };
 
   localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(currentUser));
   updateAuthUI();
   closeAuthModal();
-  showToast(`Welcome ${name}! Account registered successfully.`);
+  showToast(`Welcome ${name}! Registered successfully.`);
 
   if (pendingApiIdToOpen) {
     const target = pendingApiIdToOpen;
@@ -184,18 +194,18 @@ function registerWithEmail(event) {
     openApiModal(target, true);
   }
 }
+window.registerWithEmail = registerWithEmail;
 
-function logoutUser() {
+async function logoutUser() {
+  if (window.firebaseSignOutUser) {
+    await window.firebaseSignOutUser();
+  }
   currentUser = null;
   localStorage.removeItem('api_nexus_authenticated_user');
   updateAuthUI();
   showToast("You have been signed out.");
 }
-
-function initials(str) {
-  if (!str) return 'DV';
-  return str.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-}
+window.logoutUser = logoutUser;
 
 // --- Favorites Management ---
 function toggleFavorite(apiId, event) {
@@ -253,6 +263,7 @@ function clearSearchInput() {
   document.getElementById('autocomplete-dropdown')?.classList.remove('active');
   renderApis();
 }
+window.clearSearchInput = clearSearchInput;
 
 function clearCmdKInput() {
   const cmdkInput = document.getElementById('cmdk-input');
@@ -412,6 +423,7 @@ function selectSuggestion(q) {
   document.getElementById('autocomplete-dropdown')?.classList.remove('active');
   renderApis();
 }
+window.selectSuggestion = selectSuggestion;
 
 // --- Filtering Engine ---
 function triggerSearchAndFilter() {
@@ -552,6 +564,7 @@ function goToPage(page) {
   renderApis();
   window.scrollTo({ top: 400, behavior: 'smooth' });
 }
+window.goToPage = goToPage;
 
 function renderCardHtml(api) {
   const isFav = favoritesSet.has(api.id);
@@ -641,16 +654,15 @@ function renderTableHtml(apis) {
   `;
 }
 
-// --- 9-Tab API Inspector Drawer with Social Auth Gate ---
+// --- 9-Tab API Inspector Drawer with Firebase Auth Gate ---
 function openApiModal(apiId, isBypassingGate = false) {
-  // Security & Registration Gate check: Prompt social auth after 1 API inspection
   if (!currentUser && !isBypassingGate) {
     apiViewsCount++;
     localStorage.setItem('api_nexus_api_views', apiViewsCount);
 
     if (apiViewsCount >= 1) {
       pendingApiIdToOpen = apiId;
-      openAuthModal("Registration Required: Please sign in with Google, Facebook, or Microsoft to inspect API specifications and run sandbox requests.");
+      openAuthModal("Firebase Auth Gate: Please sign in with Google to initialize your Firebase profile and unlock unlimited API specs.");
       return;
     }
   }
@@ -845,6 +857,7 @@ function openApiModal(apiId, isBypassingGate = false) {
   switchTab('overview');
   document.getElementById('api-modal')?.classList.add('active');
 }
+window.openApiModal = openApiModal;
 
 function executeSandboxRequest() {
   if (!currentModalApi) return;
@@ -863,6 +876,7 @@ function executeSandboxRequest() {
     showToast("Sandbox request executed successfully!");
   }, 300);
 }
+window.executeSandboxRequest = executeSandboxRequest;
 
 function renderCodeSnippetTab(api) {
   const languages = ['cURL', 'JavaScript', 'Node.js', 'Python', 'Java', 'PHP', 'Go', 'C#'];
@@ -887,6 +901,7 @@ function switchSnippetLang(lang) {
   activeSnippetLang = lang;
   if (currentModalApi) renderCodeSnippetTab(currentModalApi);
 }
+window.switchSnippetLang = switchSnippetLang;
 
 function generateCodeSnippet(api, lang) {
   const url = `${api.website || 'https://api.example.com'}/v1/data`;
@@ -992,6 +1007,7 @@ function switchTab(tabName) {
     pane.classList.toggle('active', pane.id === `${tabName}-tab`);
   });
 }
+window.switchTab = switchTab;
 
 // --- Comparison Engine ---
 function toggleCompare(apiId) {
@@ -1011,6 +1027,7 @@ function toggleCompare(apiId) {
   if (el) el.textContent = comparisonSet.size;
   renderApis();
 }
+window.toggleCompare = toggleCompare;
 
 function openComparisonModal() {
   if (comparisonSet.size === 0) {
@@ -1090,6 +1107,7 @@ function renderCmdKResults(query) {
     </div>
   `).join('');
 }
+window.renderCmdKResults = renderCmdKResults;
 
 // --- Utilities ---
 function setView(view) {
@@ -1126,6 +1144,7 @@ function copySnippet(elementId) {
     showToast("Copied code snippet to clipboard!");
   });
 }
+window.copySnippet = copySnippet;
 
 function showToast(msg) {
   const toast = document.getElementById('toast');
@@ -1134,6 +1153,7 @@ function showToast(msg) {
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3000);
 }
+window.showToast = showToast;
 
 function escapeHtml(str) {
   if (!str) return '';

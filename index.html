@@ -16,6 +16,9 @@
   
   <!-- Custom Styles -->
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Firebase v10 Integration -->
+  <script type="module" src="firebase-config.js"></script>
 </head>
 <body>
 
@@ -28,7 +31,7 @@
         </div>
         <div>
           <span class="logo-text">API NEXUS</span>
-          <span class="logo-badge">Hub v5.0</span>
+          <span class="logo-badge">Hub v6.0</span>
         </div>
       </a>
 
@@ -226,7 +229,7 @@
     </div>
   </div>
 
-  <!-- Social Authentication & Registration Gate Modal -->
+  <!-- Firebase Social Authentication & Registration Gate Modal -->
   <div class="modal-overlay" id="auth-modal">
     <div class="modal-content" style="max-width: 480px; padding: 0;">
       <div class="modal-header" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(139, 92, 246, 0.15)); border-bottom: 1px solid var(--border-color);">
@@ -235,8 +238,8 @@
             <i class="fa-solid fa-shield-halved"></i>
           </div>
           <div>
-            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Developer Registration</h3>
-            <span style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700;">Account Authentication</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Firebase Authentication</h3>
+            <span style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700;">Official Firebase Auth & Firestore Sync</span>
           </div>
         </div>
         <button class="close-btn" id="auth-modal-close-btn">&times;</button>
@@ -244,12 +247,12 @@
 
       <div class="modal-body" style="padding: 1.75rem;">
         <p id="auth-modal-reason" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
-          Please sign in or register an account using Google, Facebook, or Microsoft to continue exploring API details, code snippets, and live sandboxes.
+          Please sign in using Google to initialize your Firebase developer account and sync your profile to Firestore.
         </p>
 
-        <!-- Social Login Provider Buttons -->
+        <!-- Firebase Official Google Sign-In Button -->
         <div class="social-btn-group">
-          <button class="btn-social btn-google" onclick="loginWithProvider('Google')">
+          <button class="btn-social btn-google" id="btn-google-login" onclick="loginWithProvider('Google')">
             <i class="fa-brands fa-google" style="font-size: 1.1rem;"></i> Continue with Google
           </button>
           
@@ -314,7 +317,7 @@
 
   <!-- Footer -->
   <footer style="border-top: 1px solid var(--border-color); padding: 2.5rem 2rem; text-align: center; color: var(--text-dim); font-size: 0.9rem;">
-    <p>API Nexus Platform &copy; 2026. Built with HTML5, Vanilla JavaScript, & Glassmorphism CSS.</p>
+    <p>API Nexus Platform &copy; 2026. Powered by Firebase Authentication & Firestore.</p>
   </footer>
 
   <!-- Scripts -->
