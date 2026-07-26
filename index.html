@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Nexus - Enterprise Public API Explorer & Platform</title>
+  <meta name="description" content="Discover, search, compare, and test 5,000+ developer APIs across AI, Science, Finance, Weather, and Auth with full specifications, rate limits, pricing, and live sandboxes.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation Header -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo-group">
+        <div class="logo-icon">
+          <i class="fa-solid fa-network-wired"></i>
+        </div>
+        <div>
+          <span class="logo-text">API NEXUS</span>
+          <span class="logo-badge">Hub v3.0</span>
+        </div>
+      </a>
+
+      <div class="nav-actions">
+        <!-- Ctrl+K Shortcut Button -->
+        <button class="cmd-k-trigger" id="btn-cmd-k" title="Global Quick Search (Ctrl+K)">
+          <i class="fa-solid fa-magnifying-glass"></i> Search <kbd class="cmd-kbd">Ctrl K</kbd>
+        </button>
+
+        <!-- Compare Modal Button -->
+        <button class="btn-secondary" id="btn-open-compare">
+          <i class="fa-solid fa-code-compare"></i> Compare (<span id="compare-count">0</span>)
+        </button>
+
+        <!-- Theme Toggle Button -->
+        <button class="theme-toggle-btn" id="btn-theme-toggle" title="Toggle Light/Dark Theme">
+          <i class="fa-solid fa-moon" id="theme-icon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Top Dashboard Metrics Bar -->
+  <section class="dashboard-bar">
+    <div class="dashboard-container">
+      <div class="dash-metric">
+        <i class="fa-solid fa-cubes" style="color: var(--accent-cyan);"></i>
+        <span class="dash-value" id="stat-total-apis">5,000+</span>
+        <span class="dash-label">Free APIs</span>
+      </div>
+      <div class="dash-metric">
+        <i class="fa-solid fa-layer-group" style="color: var(--accent-violet);"></i>
+        <span class="dash-value" id="stat-categories">28</span>
+        <span class="dash-label">Categories</span>
+      </div>
+      <div class="dash-metric">
+        <i class="fa-solid fa-building" style="color: var(--accent-amber);"></i>
+        <span class="dash-value">50+</span>
+        <span class="dash-label">Providers</span>
+      </div>
+      <div class="dash-metric">
+        <i class="fa-solid fa-shield-halved" style="color: var(--accent-emerald);"></i>
+        <span class="dash-value">99.99%</span>
+        <span class="dash-label">Average Uptime</span>
+      </div>
+      <div class="dash-metric">
+        <i class="fa-solid fa-bolt" style="color: var(--accent-rose);"></i>
+        <span class="dash-value">38 ms</span>
+        <span class="dash-label">Avg Response Time</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <h1 class="hero-title">Discover <span>5,000+ Free APIs</span></h1>
+    <p class="hero-subtitle">
+      Comprehensive catalog of public and open-access APIs with full technical specifications, rate limits, pricing, authentication requirements, and interactive sandbox testing.
+    </p>
+  </section>
+
+  <!-- Search & Multi-Facet Controls Container -->
+  <section class="controls-container">
+    <!-- Live Search Input with Autocomplete -->
+    <div class="search-box-wrapper">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input type="text" id="search-input" class="search-input" placeholder="Search 5,000+ free APIs by name, category, tags, or provider (e.g. 'OpenAI', 'Crypto', 'Geocoding', 'NASA')..." autocomplete="off" />
+      <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
+    </div>
+
+    <!-- Category Quick Chips -->
+    <div class="category-chips" id="category-chips-container"></div>
+
+    <!-- Advanced Multi-Filter & Sorting Controls Bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <!-- Auth Filter -->
+        <select id="filter-auth" class="select-filter">
+          <option value="All">All Auth Types</option>
+          <option value="API Key">API Key</option>
+          <option value="OAuth">OAuth 2.0</option>
+          <option value="JWT">JWT Token</option>
+          <option value="None">No Auth (Public)</option>
+        </select>
+
+        <!-- HTTP Method Filter -->
+        <select id="filter-method" class="select-filter">
+          <option value="All">All Methods</option>
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+          <option value="PUT">PUT</option>
+          <option value="DELETE">DELETE</option>
+        </select>
+
+        <!-- Pricing Filter -->
+        <select id="filter-pricing" class="select-filter">
+          <option value="All">All Pricing</option>
+          <option value="Free">100% Free</option>
+          <option value="Freemium">Freemium</option>
+        </select>
+
+        <!-- Response Format Filter -->
+        <select id="filter-format" class="select-filter">
+          <option value="All">All Formats</option>
+          <option value="JSON">JSON</option>
+          <option value="XML">XML</option>
+        </select>
+
+        <!-- Favorites Quick Toggle -->
+        <button class="favorite-toggle-btn" id="btn-favorites-filter">
+          <i class="fa-solid fa-heart" style="color: var(--accent-rose);"></i> Favorites (<span id="stat-fav-count">0</span>)
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <!-- Sorting Select -->
+        <label for="sort-select" style="font-size: 0.85rem; color: var(--text-dim); font-weight: 600;">Sort By:</label>
+        <select id="sort-select" class="select-filter">
+          <option value="popular">Most Popular</option>
+          <option value="rating">Highest Rating</option>
+          <option value="fastest">Fastest Latency</option>
+          <option value="alphabetical">Alphabetical</option>
+        </select>
+
+        <!-- View Toggle -->
+        <div class="view-toggle">
+          <button id="btn-view-grid" class="toggle-btn active" title="Grid View">
+            <i class="fa-solid fa-border-all"></i> Grid
+          </button>
+          <button id="btn-view-table" class="toggle-btn" title="Structured Table View">
+            <i class="fa-solid fa-list"></i> Table
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Grid View Container -->
+  <main id="api-grid-container" class="api-grid"></main>
+
+  <!-- Table View Container -->
+  <main id="api-table-container" class="table-container" style="display: none;"></main>
+
+  <!-- Pagination Bar -->
+  <section id="pagination-container"></section>
+
+  <!-- 9-Tab API Inspector Drawer / Modal -->
+  <div class="modal-overlay" id="api-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="modal-title">API Details</h2>
+          <span class="category-tag" id="modal-category">Category</span>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <a id="modal-website-link" href="#" target="_blank" class="btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+            <i class="fa-solid fa-globe"></i> Website
+          </a>
+          <a id="modal-docs-link" href="#" target="_blank" class="btn-primary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+            <i class="fa-solid fa-book"></i> Docs
+          </a>
+          <button class="close-btn" id="modal-close-btn">&times;</button>
+        </div>
+      </div>
+
+      <!-- 9-Tab Navigation Bar -->
+      <div class="modal-tabs">
+        <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+        <button class="tab-btn" data-tab="auth" onclick="switchTab('auth')">Authentication</button>
+        <button class="tab-btn" data-tab="endpoints" onclick="switchTab('endpoints')">Endpoints</button>
+        <button class="tab-btn" data-tab="request" onclick="switchTab('request')">Request Example</button>
+        <button class="tab-btn" data-tab="response" onclick="switchTab('response')">Response Example</button>
+        <button class="tab-btn" data-tab="errors" onclick="switchTab('errors')">Error Codes</button>
+        <button class="tab-btn" data-tab="pricing" onclick="switchTab('pricing')">Pricing</button>
+        <button class="tab-btn" data-tab="sdks" onclick="switchTab('sdks')">SDKs</button>
+        <button class="tab-btn" data-tab="changelog" onclick="switchTab('changelog')">Changelog</button>
+      </div>
+
+      <!-- Tab Content Body -->
+      <div class="modal-body">
+        <div class="tab-pane active" id="overview-tab"></div>
+        <div class="tab-pane" id="auth-tab"></div>
+        <div class="tab-pane" id="endpoints-tab"></div>
+        <div class="tab-pane" id="request-tab"></div>
+        <div class="tab-pane" id="response-tab"></div>
+        <div class="tab-pane" id="errors-tab"></div>
+        <div class="tab-pane" id="pricing-tab"></div>
+        <div class="tab-pane" id="sdks-tab"></div>
+        <div class="tab-pane" id="changelog-tab"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side-by-Side Comparison Matrix Modal -->
+  <div class="modal-overlay" id="comp-modal">
+    <div class="modal-content" style="max-width: 1150px;">
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="fa-solid fa-code-compare" style="color: var(--accent-cyan);"></i> Side-by-Side API Comparison Matrix</h2>
+        <button class="close-btn" id="comp-modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="comparison-grid" class="comparison-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ctrl + K Command Palette Search Modal -->
+  <div class="modal-overlay" id="cmdk-modal">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header" style="padding: 1rem 1.5rem;">
+        <i class="fa-solid fa-magnifying-glass" style="color: var(--accent-cyan); font-size: 1.2rem;"></i>
+        <input type="text" id="cmdk-input" style="flex: 1; margin: 0 1rem; background: transparent; border: none; color: var(--text-main); font-size: 1.1rem; outline: none;" placeholder="Search APIs, tags, or providers..." oninput="renderCmdKResults(this.value)" />
+        <button class="close-btn" id="cmdk-modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem; max-height: 400px;" id="cmdk-results"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">Notification</div>
+
+  <!-- Footer -->
+  <footer style="border-top: 1px solid var(--border-color); padding: 2.5rem 2rem; text-align: center; color: var(--text-dim); font-size: 0.9rem;">
+    <p>API Nexus Platform &copy; 2026. Built with HTML5, Vanilla JavaScript, & Glassmorphism CSS.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="apis.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
