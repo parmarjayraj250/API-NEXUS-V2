@@ -85,6 +85,18 @@ export async function signInWithGoogleFirebase() {
       console.log("⏱️ Firestore: Updated lastLogin timestamp at users/" + user.uid);
     }
 
+    const userData = {
+      uid: user.uid,
+      name: user.displayName || user.email || "Developer User",
+      email: user.email || "",
+      photoURL: user.photoURL || "",
+      provider: "Google"
+    };
+
+    localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(userData));
+    if (window.updateAuthUI) window.updateAuthUI();
+    if (window.closeAuthModal) window.closeAuthModal();
+
     if (window.showToast) {
       window.showToast(`Welcome ${user.displayName || user.email}! Firebase Google Sign-In Successful.`);
     }
@@ -106,9 +118,11 @@ export async function signInWithGoogleFirebase() {
 export async function firebaseSignOutUser() {
   try {
     await signOut(auth);
+    localStorage.removeItem('api_nexus_authenticated_user');
     if (window.onFirebaseUserSignOut) {
       window.onFirebaseUserSignOut();
     }
+    if (window.updateAuthUI) window.updateAuthUI();
   } catch (err) {
     console.error("Error signing out from Firebase:", err);
   }
@@ -130,7 +144,9 @@ onAuthStateChanged(auth, async (user) => {
     if (window.updateAuthUI) window.updateAuthUI();
     if (window.closeAuthModal) window.closeAuthModal();
   } else {
-    console.log("Firebase Auth Observer: Guest mode");
+    console.log("Firebase Auth Observer: Signed Out");
+    localStorage.removeItem('api_nexus_authenticated_user');
+    if (window.updateAuthUI) window.updateAuthUI();
   }
 });
 

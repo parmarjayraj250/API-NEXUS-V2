@@ -1,4 +1,4 @@
-// API Nexus Platform Engine v6.5 (Firebase Auth & Firestore Sync Engine)
+// API Nexus Platform Engine v7.0 (Firebase Auth State & UI Sync Engine)
 
 // State Management
 let currentTheme = localStorage.getItem('api_nexus_theme') || 'dark';
@@ -60,32 +60,49 @@ function toggleTheme() {
   showToast(`Switched to ${nextTheme} theme`);
 }
 
-// --- Firebase Authentication & Social Login Gate Engine ---
+// --- Firebase Authentication State & UI Synchronization ---
 function updateAuthUI() {
+  // Sync currentUser with localStorage
+  currentUser = JSON.parse(localStorage.getItem('api_nexus_authenticated_user') || 'null');
   const container = document.getElementById('auth-nav-container');
   if (!container) return;
 
   if (currentUser) {
-    const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    // Hide auth modal immediately when logged in
+    closeAuthModal();
+
+    const initials = currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'DV';
+    const avatarHtml = currentUser.photoURL ? 
+      `<img src="${escapeHtml(currentUser.photoURL)}" class="user-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-cyan);" alt="Profile" />` : 
+      `<div class="user-avatar">${initials}</div>`;
+
     container.innerHTML = `
       <div class="user-profile-badge" id="user-profile-btn" onclick="toggleProfileDropdown(event)">
-        ${currentUser.photoURL ? `<img src="${escapeHtml(currentUser.photoURL)}" class="user-avatar" style="object-fit: cover;" alt="Avatar" />` : `<div class="user-avatar">${initials}</div>`}
-        <span class="user-name">${escapeHtml(currentUser.name)}</span>
+        ${avatarHtml}
+        <span class="user-name" style="font-weight: 700; color: var(--text-main);">${escapeHtml(currentUser.name)}</span>
         <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: var(--text-dim);"></i>
 
         <div class="profile-dropdown" id="profile-dropdown">
-          <div style="padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">${escapeHtml(currentUser.name)}</div>
-            <div style="font-size: 0.75rem; color: var(--text-dim);">${escapeHtml(currentUser.email)}</div>
-            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">● Firebase Auth (${currentUser.provider})</span>
+          <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+            <div style="font-size: 0.9rem; font-weight: 800; color: var(--text-main);">${escapeHtml(currentUser.name)}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(currentUser.email)}</div>
+            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">● Firebase Verified</span>
           </div>
           <div class="dropdown-item" onclick="logoutUser()">
-            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+            <i class="fa-solid fa-right-from-bracket" style="color: var(--accent-rose);"></i> Sign Out
           </div>
         </div>
       </div>
     `;
+
+    // If pending API inspection exists, open it immediately
+    if (pendingApiIdToOpen) {
+      const target = pendingApiIdToOpen;
+      pendingApiIdToOpen = null;
+      openApiModal(target, true);
+    }
   } else {
+    // Guest User state: Show Sign In / Register button
     container.innerHTML = `
       <button class="btn-primary" onclick="openAuthModal()" style="font-size: 0.85rem; padding: 0.45rem 1rem;">
         <i class="fa-solid fa-user-plus"></i> Sign In / Register
@@ -108,12 +125,16 @@ document.addEventListener('click', (e) => {
 });
 
 function openAuthModal(reasonMessage) {
+  // If user is already signed in, do not show auth modal
+  currentUser = JSON.parse(localStorage.getItem('api_nexus_authenticated_user') || 'null');
+  if (currentUser) return;
+
   const modal = document.getElementById('auth-modal');
   const msgEl = document.getElementById('auth-modal-reason');
   if (msgEl && reasonMessage) {
     msgEl.textContent = reasonMessage;
   } else if (msgEl) {
-    msgEl.textContent = "Security Notice: Please register or sign in with Google to unlock unlimited API details and sandbox access.";
+    msgEl.textContent = "Security Notice: Please sign in with Google to initialize your Firebase profile and unlock unlimited API specs.";
   }
   if (modal) modal.classList.add('active');
 }
@@ -154,12 +175,6 @@ function fallbackSocialLogin(providerName = 'Google') {
   updateAuthUI();
   closeAuthModal();
   showToast(`Signed in via ${providerName}! 🎉`);
-
-  if (pendingApiIdToOpen) {
-    const target = pendingApiIdToOpen;
-    pendingApiIdToOpen = null;
-    openApiModal(target, true);
-  }
 }
 window.fallbackSocialLogin = fallbackSocialLogin;
 
@@ -188,12 +203,6 @@ function registerWithEmail(event) {
   updateAuthUI();
   closeAuthModal();
   showToast(`Welcome ${name}! Registered successfully.`);
-
-  if (pendingApiIdToOpen) {
-    const target = pendingApiIdToOpen;
-    pendingApiIdToOpen = null;
-    openApiModal(target, true);
-  }
 }
 window.registerWithEmail = registerWithEmail;
 
@@ -657,6 +666,7 @@ function renderTableHtml(apis) {
 
 // --- 9-Tab API Inspector Drawer with Firebase Auth Gate ---
 function openApiModal(apiId, isBypassingGate = false) {
+  currentUser = JSON.parse(localStorage.getItem('api_nexus_authenticated_user') || 'null');
   if (!currentUser && !isBypassingGate) {
     apiViewsCount++;
     localStorage.setItem('api_nexus_api_views', apiViewsCount);
@@ -1119,7 +1129,7 @@ function setView(view) {
   const gridContainer = document.getElementById('api-grid-container');
   const tableContainer = document.getElementById('api-table-container');
   if (gridContainer) gridContainer.style.display = view === 'grid' ? 'grid' : 'none';
-  if (tableContainer) tableContainer.style.display = view === 'table' ? 'block' : 'none';
+  if (tableContainer) tableContainer.style.display = view === 'table' ? 'none' : 'block';
   
   renderApis();
 }
