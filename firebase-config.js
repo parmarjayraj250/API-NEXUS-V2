@@ -112,7 +112,7 @@ async function handleSocialLogin(providerInstance, providerName) {
       name: user.displayName || user.email || "Developer User",
       email: user.email || "",
       photoURL: user.photoURL || "",
-      provider: providerName === "google.com" ? "Google" : "GitHub"
+      provider: providerName === "github.com" ? "GitHub" : "Google"
     };
 
     localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(userData));
@@ -120,7 +120,7 @@ async function handleSocialLogin(providerInstance, providerName) {
     if (window.closeAuthModal) window.closeAuthModal();
 
     if (window.showToast) {
-      window.showToast(`Welcome ${user.displayName || user.email}! Authenticated via ${providerName === "google.com" ? "Google" : "GitHub"}.`);
+      window.showToast(`Welcome ${user.displayName || user.email}! Authenticated via ${userData.provider}.`);
     }
 
     return user;
@@ -169,12 +169,22 @@ export async function firebaseSignOutUser() {
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     console.log("Firebase Auth Observer: User Signed In ->", user.email, "UID:", user.uid);
+    const providerId = user.providerData && user.providerData[0] ? user.providerData[0].providerId : '';
+    let providerName = 'Google';
+    if (providerId.includes('github')) providerName = 'GitHub';
+    
+    // Check existing stored provider
+    const existing = JSON.parse(localStorage.getItem('api_nexus_authenticated_user') || '{}');
+    if (existing.provider && existing.provider !== 'Firebase User') {
+      providerName = existing.provider;
+    }
+
     const userData = {
       uid: user.uid,
       name: user.displayName || user.email || "Developer User",
       email: user.email || "",
       photoURL: user.photoURL || "",
-      provider: "Firebase User"
+      provider: providerName
     };
 
     localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(userData));

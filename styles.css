@@ -1,6 +1,6 @@
 /* ==========================================================================
    API NEXUS - MODERN DEVELOPER PLATFORM DESIGN SYSTEM (DARK & LIGHT THEMES)
-   MOBILE-FIRST RESPONSIVE DESIGN SYSTEM
+   MOBILE-FIRST RESPONSIVE DESIGN SYSTEM (REFINE MOBILE NAVIGATION)
    ========================================================================== */
 
 :root, [data-theme="dark"] {
@@ -194,7 +194,7 @@ header {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
-  min-width: 220px;
+  min-width: 230px;
   padding: 0.75rem;
   display: none;
   z-index: 600;
@@ -337,7 +337,7 @@ header {
   max-width: 1400px;
   margin: 0 auto;
   display: flex;
-  justify-content: space-around;
+  justify-style: space-around;
   align-items: center;
   flex-wrap: wrap;
   gap: 1.25rem;
@@ -1179,59 +1179,78 @@ header {
 @media (max-width: 768px) {
   .nav-container {
     padding: 0.75rem 1rem;
+    flex-wrap: wrap;
   }
   .logo-text {
-    font-size: 1.2rem;
-  }
-  .logo-icon {
-    width: 36px;
-    height: 36px;
     font-size: 1.1rem;
   }
-  .nav-actions {
-    gap: 0.5rem;
+  .logo-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
   }
-  .cmd-k-trigger span, .cmd-kbd {
-    display: none;
+  .nav-actions {
+    gap: 0.4rem;
+  }
+
+  .cmd-k-trigger {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .btn-secondary {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+    min-height: 34px;
+  }
+
+  .btn-primary {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    min-height: 34px;
   }
 
   .hero-section {
-    padding: 1.75rem 1rem 1rem 1rem;
+    padding: 1.5rem 1rem 1rem 1rem;
   }
   .hero-title {
-    font-size: 1.8rem;
+    font-size: 1.7rem;
   }
   .hero-subtitle {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 
   .dashboard-bar {
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 1rem;
   }
   .dashboard-container {
-    gap: 0.75rem;
-    justify-content: flex-start;
+    gap: 0.6rem 1.25rem;
+    justify-content: center;
   }
   .dash-metric {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+  }
+  .dash-value {
+    font-size: 0.95rem;
   }
 
   .controls-container {
     padding: 0 1rem;
   }
   .search-input {
-    padding: 0.85rem 2.8rem 0.85rem 2.8rem;
-    font-size: 0.95rem;
+    padding: 0.8rem 2.5rem 0.8rem 2.5rem;
+    font-size: 0.9rem;
   }
   .search-icon {
-    left: 1rem;
-    font-size: 1.1rem;
+    left: 0.85rem;
+    font-size: 1rem;
   }
 
   .filter-bar {
-    padding: 0.85rem;
+    padding: 0.75rem;
     flex-direction: column;
     align-items: stretch;
+    gap: 0.6rem;
   }
   .filter-group {
     width: 100%;
@@ -1239,7 +1258,9 @@ header {
   }
   .select-filter {
     flex: 1;
-    min-width: 130px;
+    min-width: 120px;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
   }
 
   .api-grid {
@@ -1256,10 +1277,10 @@ header {
     border-radius: 0;
   }
   .modal-header {
-    padding: 1rem;
+    padding: 0.85rem 1rem;
   }
   .modal-title {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
   }
   .modal-body {
     padding: 1rem;
@@ -1274,13 +1295,22 @@ header {
 }
 
 @media (max-width: 576px) {
+  .nav-container {
+    padding: 0.5rem 0.75rem;
+  }
+
   .user-name {
     display: none;
   }
-  .user-profile-badge {
-    padding: 0.25rem 0.5rem;
-  }
   
+  .user-profile-badge {
+    padding: 0.2rem 0.4rem;
+  }
+
+  .logo-badge {
+    display: none;
+  }
+
   #overview-tab > div {
     grid-template-columns: 1fr !important;
   }

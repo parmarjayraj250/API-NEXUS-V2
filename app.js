@@ -1,4 +1,4 @@
-// API Nexus Platform Engine v8.5 (Firebase GitHub & Google Authentication Engine)
+// API Nexus Platform Engine v9.5 (Firebase Auth Engine & Mobile Responsive Sync)
 
 // State Management
 let currentTheme = localStorage.getItem('api_nexus_theme') || 'dark';
@@ -76,6 +76,8 @@ function updateAuthUI() {
       `<img src="${escapeHtml(currentUser.photoURL)}" class="user-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-cyan);" alt="Profile" />` : 
       `<div class="user-avatar">${initials}</div>`;
 
+    const providerLabel = (currentUser.provider || 'Google').toUpperCase();
+
     container.innerHTML = `
       <div class="user-profile-badge" id="user-profile-btn" onclick="toggleProfileDropdown(event)">
         ${avatarHtml}
@@ -86,7 +88,7 @@ function updateAuthUI() {
           <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
             <div style="font-size: 0.9rem; font-weight: 800; color: var(--text-main);">${escapeHtml(currentUser.name)}</div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(currentUser.email)}</div>
-            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">● Firebase Verified (${currentUser.provider})</span>
+            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">● FIREBASE VERIFIED (${providerLabel})</span>
           </div>
           <div class="dropdown-item" onclick="logoutUser()">
             <i class="fa-solid fa-right-from-bracket" style="color: var(--accent-rose);"></i> Sign Out
@@ -125,9 +127,12 @@ document.addEventListener('click', (e) => {
 });
 
 function openAuthModal(reasonMessage) {
-  // If user is already signed in, do not show auth modal
+  // If user is already signed in, NEVER show auth modal
   currentUser = JSON.parse(localStorage.getItem('api_nexus_authenticated_user') || 'null');
-  if (currentUser) return;
+  if (currentUser) {
+    closeAuthModal();
+    return;
+  }
 
   const modal = document.getElementById('auth-modal');
   const msgEl = document.getElementById('auth-modal-reason');
@@ -657,15 +662,12 @@ function renderTableHtml(apis) {
 // --- 9-Tab API Inspector Drawer with Firebase Auth Gate ---
 function openApiModal(apiId, isBypassingGate = false) {
   currentUser = JSON.parse(localStorage.getItem('api_nexus_authenticated_user') || 'null');
+  
+  // IF USER IS AUTHENTICATED -> BYPASS AUTH MODAL ENTIRELY
   if (!currentUser && !isBypassingGate) {
-    apiViewsCount++;
-    localStorage.setItem('api_nexus_api_views', apiViewsCount);
-
-    if (apiViewsCount >= 1) {
-      pendingApiIdToOpen = apiId;
-      openAuthModal("Firebase Auth Gate: Please sign in with Google or GitHub to initialize your Firebase profile and unlock unlimited API specs.");
-      return;
-    }
+    pendingApiIdToOpen = apiId;
+    openAuthModal("Firebase Auth Gate: Please sign in with Google or GitHub to initialize your Firebase profile and unlock unlimited API specs.");
+    return;
   }
 
   const api = API_DATABASE.find(a => a.id === apiId);
@@ -673,6 +675,7 @@ function openApiModal(apiId, isBypassingGate = false) {
   currentModalApi = api;
 
   closeCmdKModal();
+  closeAuthModal();
   document.getElementById('autocomplete-dropdown')?.classList.remove('active');
 
   document.getElementById('modal-title').textContent = api.name;
