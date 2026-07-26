@@ -1,4 +1,4 @@
-// API Nexus Platform Engine v9.5 (Firebase Auth Engine & Mobile Responsive Sync)
+// API Nexus Platform Engine v10.0 (View Toggle Bug Fix & Mobile Table Optimization)
 
 // State Management
 let currentTheme = localStorage.getItem('api_nexus_theme') || 'dark';
@@ -637,7 +637,9 @@ function renderTableHtml(apis) {
         </tr>
       </thead>
       <tbody>
-        ${apis.map(api => `
+        ${apis.map(api => {
+          const isFav = favoritesSet.has(api.id);
+          return `
           <tr>
             <td><strong style="color: var(--text-main);">${escapeHtml(api.name)}</strong></td>
             <td style="color: var(--text-muted);">${escapeHtml(api.provider || 'Provider')}</td>
@@ -648,12 +650,17 @@ function renderTableHtml(apis) {
             <td>${escapeHtml(api.authType || 'None')}</td>
             <td><span style="color: var(--accent-emerald); font-weight: 600;">${escapeHtml(api.pricingType || 'Free')}</span></td>
             <td>
-              <button class="btn-card btn-card-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="openApiModal('${api.id}')">
-                Inspect
-              </button>
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <button class="btn-card btn-card-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="openApiModal('${api.id}')">
+                  Inspect
+                </button>
+                <button class="fav-heart-btn ${isFav ? 'active' : ''}" style="min-width: 28px; min-height: 28px;" onclick="toggleFavorite('${api.id}', event)" title="Toggle Favorite">
+                  <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>
+                </button>
+              </div>
             </td>
           </tr>
-        `).join('')}
+        `}).join('')}
       </tbody>
     </table>
   `;
@@ -1122,10 +1129,11 @@ function setView(view) {
   const gridContainer = document.getElementById('api-grid-container');
   const tableContainer = document.getElementById('api-table-container');
   if (gridContainer) gridContainer.style.display = view === 'grid' ? 'grid' : 'none';
-  if (tableContainer) tableContainer.style.display = view === 'table' ? 'none' : 'block';
+  if (tableContainer) tableContainer.style.display = view === 'table' ? 'block' : 'none';
   
   renderApis();
 }
+window.setView = setView;
 
 function updateStats() {
   document.getElementById('stat-total-apis').textContent = `${API_DATABASE.length.toLocaleString()}+`;
