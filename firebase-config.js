@@ -1,6 +1,7 @@
 // ==========================================================================
 // FIREBASE v10 AUTHENTICATION & FIRESTORE CONFIGURATION
 // Configured with exact Firebase Console credentials for API-Finder (api-finder-5173b)
+// Support both Popup & Redirect flows for 100% Mobile Browser Compatibility
 // ==========================================================================
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -9,6 +10,8 @@ import {
   GoogleAuthProvider, 
   GithubAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   signOut, 
   onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -51,86 +54,116 @@ window.firebaseApp = app;
 window.firebaseAuth = auth;
 window.firebaseDb = db;
 
+// Detect Mobile Device
+const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
 /**
- * Executes official Firebase Google Authentication Popup using signInWithPopup(auth, new GoogleAuthProvider())
+ * Handle OAuth Redirect Result on Mobile Devices on page load
+ */
+(async function handleMobileRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      console.log("✅ [Firebase Mobile Redirect Auth Success]:", result.user.email);
+      await processUserDocument(result.user, result.providerId || "google.com");
+    }
+  } catch (error) {
+    console.error("❌ [Firebase Mobile Redirect Error]:", error);
+  }
+})();
+
+/**
+ * Helper to sync user state with Firestore & localStorage
+ */
+async function processUserDocument(user, providerName) {
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    await setDoc(userRef, {
+      uid: user.uid,
+      displayName: user.displayName || user.email || "Developer User",
+      email: user.email || "",
+      photoURL: user.photoURL || "",
+      provider: providerName,
+      createdAt: serverTimestamp(),
+      lastLogin: serverTimestamp()
+    });
+    console.log(`📝 [Firestore Document Created] users/${user.uid}`);
+  } else {
+    await updateDoc(userRef, {
+      lastLogin: serverTimestamp()
+    });
+    console.log(`⏱️ [Firestore Document Updated] users/${user.uid}`);
+  }
+
+  let finalProvider = "Google";
+  if (providerName.includes("github")) finalProvider = "GitHub";
+
+  const userData = {
+    uid: user.uid,
+    name: user.displayName || user.email || "Developer User",
+    email: user.email || "",
+    photoURL: user.photoURL || "",
+    provider: finalProvider
+  };
+
+  localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(userData));
+  if (window.updateAuthUI) window.updateAuthUI();
+  if (window.closeAuthModal) window.closeAuthModal();
+
+  if (window.showToast) {
+    window.showToast(`Welcome ${user.displayName || user.email}! Authenticated via ${finalProvider}.`);
+  }
+
+  return user;
+}
+
+/**
+ * Executes official Firebase Google Authentication (Popup on Desktop, Redirect on Mobile)
  */
 export async function signInWithGoogleFirebase() {
   return handleSocialLogin(googleProvider, "google.com");
 }
 
 /**
- * Executes official Firebase GitHub Authentication Popup using signInWithPopup(auth, new GithubAuthProvider())
+ * Executes official Firebase GitHub Authentication (Popup on Desktop, Redirect on Mobile)
  */
 export async function signInWithGithubFirebase() {
   return handleSocialLogin(githubProvider, "github.com");
 }
 
 /**
- * Common Firebase OAuth Popup Handler for Google & GitHub
+ * Common Firebase OAuth Handler supporting Popup & Mobile Redirect Fallback
  */
 async function handleSocialLogin(providerInstance, providerName) {
   try {
-    console.log(`[Firebase Auth] Initiating signInWithPopup for ${providerName}...`);
+    console.log(`[Firebase Auth] Initiating auth for ${providerName} (Mobile: ${isMobileDevice})...`);
     
-    // Official Firebase OAuth Popup
-    const result = await signInWithPopup(auth, providerInstance);
-    const user = result.user;
-
-    console.log(`✅ [Firebase Auth Success] User authenticated via ${providerName}:`, {
-      uid: user.uid,
-      displayName: user.displayName,
-      email: user.email,
-      photoURL: user.photoURL
-    });
-
-    // Reference Firestore user document: users/{user.uid}
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      // Create new user document in Firestore with required attributes
-      await setDoc(userRef, {
-        uid: user.uid,
-        displayName: user.displayName || user.email || "Developer User",
-        email: user.email || "",
-        photoURL: user.photoURL || "",
-        provider: providerName,
-        createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp()
-      });
-      console.log(`📝 [Firestore Document Created] Document users/${user.uid} created.`);
-    } else {
-      // Update lastLogin timestamp for existing user
-      await updateDoc(userRef, {
-        lastLogin: serverTimestamp()
-      });
-      console.log(`⏱️ [Firestore Document Updated] users/${user.uid} lastLogin timestamp updated.`);
+    if (isMobileDevice) {
+      // Use Redirect Flow on Mobile Devices to bypass popup blockers
+      await signInWithRedirect(auth, providerInstance);
+      return;
     }
 
-    const userData = {
-      uid: user.uid,
-      name: user.displayName || user.email || "Developer User",
-      email: user.email || "",
-      photoURL: user.photoURL || "",
-      provider: providerName === "github.com" ? "GitHub" : "Google"
-    };
-
-    localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(userData));
-    if (window.updateAuthUI) window.updateAuthUI();
-    if (window.closeAuthModal) window.closeAuthModal();
-
-    if (window.showToast) {
-      window.showToast(`Welcome ${user.displayName || user.email}! Authenticated via ${userData.provider}.`);
+    // Try Popup Flow on Desktop
+    try {
+      const result = await signInWithPopup(auth, providerInstance);
+      if (result && result.user) {
+        return await processUserDocument(result.user, providerName);
+      }
+    } catch (popupError) {
+      if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
+        console.warn("Popup blocked/closed. Falling back to signInWithRedirect...");
+        await signInWithRedirect(auth, providerInstance);
+        return;
+      }
+      throw popupError;
     }
-
-    return user;
   } catch (error) {
-    // Print complete Firebase error code and message to browser console for debugging
     console.error("❌ [Firebase Auth Error Details]:", {
       code: error.code,
-      message: error.message,
-      email: error.customData?.email,
-      credential: error.credential
+      message: error.message
     });
 
     if (error.code === 'auth/unauthorized-domain') {
@@ -138,10 +171,6 @@ async function handleSocialLogin(providerInstance, providerName) {
       const msg = `Firebase Security Notice: Domain '${hostname}' is not authorized. Add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized domains.`;
       console.warn(msg);
       if (window.showToast) window.showToast(msg);
-    } else if (error.code === 'auth/popup-closed-by-user') {
-      if (window.showToast) window.showToast("Sign-In popup was closed before completion.");
-    } else if (error.code === 'auth/account-exists-with-different-credential') {
-      if (window.showToast) window.showToast("Account exists with a different credential. Please sign in using your existing provider.");
     } else if (error.code === 'auth/operation-not-allowed') {
       if (window.showToast) window.showToast(`Firebase Notice: Enable ${providerName} in Firebase Console -> Authentication -> Sign-in method.`);
     } else {
