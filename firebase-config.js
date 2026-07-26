@@ -20,14 +20,14 @@ import {
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- Firebase Configuration (Extracted from Project ID: api-finder-5173b) ---
+// --- Firebase Configuration (Extracted from Firebase Console) ---
 const defaultFirebaseConfig = {
-  apiKey: "PASTE_YOUR_WEB_API_KEY_HERE", // Scroll down to 'Your apps' on Project Settings page to copy your Web API Key
+  apiKey: "PASTE_YOUR_WEB_API_KEY_HERE", // Copy apiKey from SDK setup & configuration box
   authDomain: "api-finder-5173b.firebaseapp.com",
   projectId: "api-finder-5173b",
   storageBucket: "api-finder-5173b.appspot.com",
   messagingSenderId: "17282514910",
-  appId: "1:17282514910:web:api-finder-web"
+  appId: "1:17282514910:web:1e1ddeb6125db58a45e74f" // Exact App ID from Firebase Console
 };
 
 // Use window.firebaseConfig if defined in window, otherwise defaultFirebaseConfig
@@ -93,7 +93,7 @@ export async function signInWithGoogleFirebase() {
     console.error("❌ Firebase Auth Error:", error.code, error.message);
     
     if (error.code === 'auth/api-key-not-valid' || error.message.includes('API key')) {
-      const msg = "Firebase Notice: Please scroll down to 'Your apps' on Project Settings page and copy your Web API Key into firebase-config.js";
+      const msg = "Firebase Notice: Copy your apiKey from SDK setup & configuration in Firebase Console into firebase-config.js";
       console.warn(msg);
       if (window.showToast) window.showToast(msg);
       if (window.fallbackSocialLogin) window.fallbackSocialLogin('Google');
