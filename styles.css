@@ -246,18 +246,12 @@ header {
 }
 .btn-google:hover { background: #d93025; transform: translateY(-1px); }
 
-.btn-facebook {
-  background: #1877f2;
+.btn-github {
+  background: #24292e;
   color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
-.btn-facebook:hover { background: #166fe5; transform: translateY(-1px); }
-
-.btn-microsoft {
-  background: #2f2f2f;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-.btn-microsoft:hover { background: #3c3c3c; transform: translateY(-1px); }
+.btn-github:hover { background: #1b1f23; transform: translateY(-1px); }
 
 .divider-line {
   display: flex;

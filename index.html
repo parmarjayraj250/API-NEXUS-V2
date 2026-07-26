@@ -31,7 +31,7 @@
         </div>
         <div>
           <span class="logo-text">API NEXUS</span>
-          <span class="logo-badge">Hub v6.0</span>
+          <span class="logo-badge">Hub v8.0</span>
         </div>
       </a>
 
@@ -238,8 +238,8 @@
             <i class="fa-solid fa-shield-halved"></i>
           </div>
           <div>
-            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Firebase Authentication</h3>
-            <span style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700;">Official Firebase Auth & Firestore Sync</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Developer Authentication</h3>
+            <span style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700;">Google & GitHub Firebase Auth</span>
           </div>
         </div>
         <button class="close-btn" id="auth-modal-close-btn">&times;</button>
@@ -247,21 +247,17 @@
 
       <div class="modal-body" style="padding: 1.75rem;">
         <p id="auth-modal-reason" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
-          Please sign in using Google to initialize your Firebase developer account and sync your profile to Firestore.
+          Please sign in using Google or GitHub to initialize your Firebase developer account and sync your profile to Firestore.
         </p>
 
-        <!-- Firebase Official Google Sign-In Button -->
+        <!-- Social Login Provider Buttons (Google & GitHub) -->
         <div class="social-btn-group">
           <button class="btn-social btn-google" id="btn-google-login" onclick="loginWithProvider('Google')">
             <i class="fa-brands fa-google" style="font-size: 1.1rem;"></i> Continue with Google
           </button>
           
-          <button class="btn-social btn-facebook" onclick="loginWithProvider('Facebook')">
-            <i class="fa-brands fa-facebook-f" style="font-size: 1.1rem;"></i> Continue with Facebook
-          </button>
-
-          <button class="btn-social btn-microsoft" onclick="loginWithProvider('Microsoft')">
-            <i class="fa-brands fa-microsoft" style="font-size: 1.1rem;"></i> Continue with Microsoft
+          <button class="btn-social btn-github" id="btn-github-login" onclick="loginWithProvider('GitHub')">
+            <i class="fa-brands fa-github" style="font-size: 1.2rem;"></i> Continue with GitHub
           </button>
         </div>
 

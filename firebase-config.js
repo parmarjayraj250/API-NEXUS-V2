@@ -7,6 +7,7 @@ import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebase
 import { 
   getAuth, 
   GoogleAuthProvider, 
+  GithubAuthProvider, 
   signInWithPopup, 
   signOut, 
   onAuthStateChanged 
@@ -38,11 +39,11 @@ const activeConfig = (window.firebaseConfig && window.firebaseConfig.apiKey) ? w
 const app = !getApps().length ? initializeApp(activeConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-const googleProvider = new GoogleAuthProvider();
 
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+const githubProvider = new GithubAuthProvider();
 
 // Export Services globally for debugging & app integration
 window.firebaseApp = app;
@@ -51,15 +52,24 @@ window.firebaseDb = db;
 
 /**
  * Executes official Firebase Google Authentication Popup using signInWithPopup(auth, new GoogleAuthProvider())
- * Creates or updates Firestore document at users/{uid} upon successful login.
  */
 export async function signInWithGoogleFirebase() {
+  return handleSocialLogin(googleProvider, "google.com");
+}
+
+/**
+ * Executes official Firebase GitHub Authentication Popup using signInWithPopup(auth, new GithubAuthProvider())
+ */
+export async function signInWithGithubFirebase() {
+  return handleSocialLogin(githubProvider, "github.com");
+}
+
+async function handleSocialLogin(providerInstance, providerName) {
   try {
-    // Official Firebase Google Popup Sign-In
-    const result = await signInWithPopup(auth, googleProvider);
+    const result = await signInWithPopup(auth, providerInstance);
     const user = result.user;
 
-    console.log("✅ Firebase Google Auth Success:", user.email, "UID:", user.uid);
+    console.log(`✅ Firebase Auth Success (${providerName}):`, user.email, "UID:", user.uid);
 
     // Reference Firestore user document: users/{user.uid}
     const userRef = doc(db, "users", user.uid);
@@ -69,10 +79,10 @@ export async function signInWithGoogleFirebase() {
       // Create new user document in Firestore
       await setDoc(userRef, {
         uid: user.uid,
-        displayName: user.displayName || "Developer User",
+        displayName: user.displayName || user.email || "Developer User",
         email: user.email || "",
         photoURL: user.photoURL || "",
-        provider: "google.com",
+        provider: providerName,
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp()
       });
@@ -90,7 +100,7 @@ export async function signInWithGoogleFirebase() {
       name: user.displayName || user.email || "Developer User",
       email: user.email || "",
       photoURL: user.photoURL || "",
-      provider: "Google"
+      provider: providerName === "google.com" ? "Google" : "GitHub"
     };
 
     localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(userData));
@@ -98,15 +108,15 @@ export async function signInWithGoogleFirebase() {
     if (window.closeAuthModal) window.closeAuthModal();
 
     if (window.showToast) {
-      window.showToast(`Welcome ${user.displayName || user.email}! Firebase Google Sign-In Successful.`);
+      window.showToast(`Welcome ${user.displayName || user.email}! Firebase Sign-In Successful.`);
     }
 
     return user;
   } catch (error) {
-    console.error("❌ Firebase Auth Error:", error.code, error.message);
+    console.error(`❌ Firebase Auth Error (${providerName}):`, error.code, error.message);
     
     if (error.code === 'auth/popup-closed-by-user') {
-      if (window.showToast) window.showToast("Google Sign-In popup closed.");
+      if (window.showToast) window.showToast("Sign-In popup closed.");
     } else {
       if (window.showToast) window.showToast(`Firebase Auth: ${error.message}`);
     }
@@ -137,7 +147,7 @@ onAuthStateChanged(auth, async (user) => {
       name: user.displayName || user.email || "Developer User",
       email: user.email || "",
       photoURL: user.photoURL || "",
-      provider: "Google"
+      provider: "Firebase User"
     };
 
     localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(userData));
@@ -158,4 +168,5 @@ window.setFirebaseConfig = function(customConfig) {
 
 // Attach global functions to window
 window.signInWithGoogleFirebase = signInWithGoogleFirebase;
+window.signInWithGithubFirebase = signInWithGithubFirebase;
 window.firebaseSignOutUser = firebaseSignOutUser;
