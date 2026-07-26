@@ -133,7 +133,12 @@ async function handleSocialLogin(providerInstance, providerName) {
       credential: error.credential
     });
 
-    if (error.code === 'auth/popup-closed-by-user') {
+    if (error.code === 'auth/unauthorized-domain') {
+      const hostname = window.location.hostname;
+      const msg = `Firebase Security Notice: Domain '${hostname}' is not authorized. Add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized domains.`;
+      console.warn(msg);
+      if (window.showToast) window.showToast(msg);
+    } else if (error.code === 'auth/popup-closed-by-user') {
       if (window.showToast) window.showToast("Sign-In popup was closed before completion.");
     } else if (error.code === 'auth/account-exists-with-different-credential') {
       if (window.showToast) window.showToast("Account exists with a different credential. Please sign in using your existing provider.");
