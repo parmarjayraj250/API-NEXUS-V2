@@ -1,5 +1,9 @@
-// Firebase v10 Integration for API Nexus / API Finder
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+// ==========================================================================
+// FIREBASE v10 AUTHENTICATION & FIRESTORE CONFIGURATION
+// Paste your exact config from Firebase Console -> Project Settings -> General
+// ==========================================================================
+
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { 
   getAuth, 
   GoogleAuthProvider, 
@@ -16,7 +20,7 @@ import {
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Firebase Configuration
+// --- STEP 1: Paste Your Firebase Project Keys Here ---
 const defaultFirebaseConfig = {
   apiKey: "AIzaSyDemoKey_ReplaceWithYourFirebaseKey",
   authDomain: "api-finder-app.firebaseapp.com",
@@ -26,10 +30,11 @@ const defaultFirebaseConfig = {
   appId: "1:123456789012:web:demo1234567890"
 };
 
-const firebaseConfig = window.firebaseConfig || defaultFirebaseConfig;
+// Use window.firebaseConfig if defined in window, otherwise defaultFirebaseConfig
+const activeConfig = (window.firebaseConfig && window.firebaseConfig.apiKey) ? window.firebaseConfig : defaultFirebaseConfig;
 
-// Initialize Firebase App & Services
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase App
+const app = !getApps().length ? initializeApp(activeConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
@@ -38,7 +43,8 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Window Exports for Application Engine
+// Export Services globally for debugging & app integration
+window.firebaseApp = app;
 window.firebaseAuth = auth;
 window.firebaseDb = db;
 
@@ -52,7 +58,7 @@ export async function signInWithGoogleFirebase() {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
-    console.log("Firebase Google Authentication Successful for user:", user.email, "UID:", user.uid);
+    console.log("✅ Firebase Google Auth Success:", user.email, "UID:", user.uid);
 
     // Reference Firestore user document: users/{user.uid}
     const userRef = doc(db, "users", user.uid);
@@ -69,28 +75,32 @@ export async function signInWithGoogleFirebase() {
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp()
       });
-      console.log("Firestore: Created new user document for UID:", user.uid);
+      console.log("📝 Firestore: Created new user document at users/" + user.uid);
     } else {
       // Update lastLogin timestamp for existing user
       await updateDoc(userRef, {
         lastLogin: serverTimestamp()
       });
-      console.log("Firestore: Updated lastLogin timestamp for UID:", user.uid);
+      console.log("⏱️ Firestore: Updated lastLogin timestamp at users/" + user.uid);
     }
 
     if (window.showToast) {
-      window.showToast(`Welcome ${user.displayName || user.email}! Firebase Google Sign-In Successful.`);
+      window.showToast(`Welcome ${user.displayName || user.email}! Signed in via Firebase.`);
     }
 
     return user;
   } catch (error) {
-    console.error("Firebase Auth Error:", error.code, error.message);
-    if (error.code === 'auth/popup-closed-by-user') {
-      if (window.showToast) window.showToast("Sign in popup was closed before completing login.");
-    } else if (error.code === 'auth/cancelled-popup-request') {
-      console.warn("Popup request cancelled.");
+    console.error("❌ Firebase Auth Error:", error.code, error.message);
+    
+    if (error.code === 'auth/api-key-not-valid' || error.message.includes('API key')) {
+      const msg = "Firebase Notice: Replace placeholder apiKey in firebase-config.js with your key from Firebase Console.";
+      console.warn(msg);
+      if (window.showToast) window.showToast(msg);
+      if (window.fallbackSocialLogin) window.fallbackSocialLogin('Google');
+    } else if (error.code === 'auth/popup-closed-by-user') {
+      if (window.showToast) window.showToast("Google Sign-In popup closed.");
     } else {
-      if (window.showToast) window.showToast(`Firebase Auth Error: ${error.message}`);
+      if (window.showToast) window.showToast(`Firebase Auth: ${error.message}`);
     }
     throw error;
   }
@@ -111,7 +121,7 @@ export async function firebaseSignOutUser() {
 // --- Persistent Auth Observer ---
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    console.log("Firebase Auth State Changed: User Signed In ->", user.email);
+    console.log("Firebase Auth Observer: Signed In ->", user.email);
     const userData = {
       uid: user.uid,
       name: user.displayName || user.email || "Developer User",
@@ -124,9 +134,15 @@ onAuthStateChanged(auth, async (user) => {
     if (window.updateAuthUI) window.updateAuthUI();
     if (window.closeAuthModal) window.closeAuthModal();
   } else {
-    console.log("Firebase Auth State Changed: User Signed Out");
+    console.log("Firebase Auth Observer: Guest mode");
   }
 });
+
+// Dynamic Config Setter
+window.setFirebaseConfig = function(customConfig) {
+  window.firebaseConfig = customConfig;
+  console.log("Updated window.firebaseConfig:", customConfig);
+};
 
 // Attach global functions to window
 window.signInWithGoogleFirebase = signInWithGoogleFirebase;
