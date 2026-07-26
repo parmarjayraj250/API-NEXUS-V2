@@ -28,7 +28,7 @@
         </div>
         <div>
           <span class="logo-text">API NEXUS</span>
-          <span class="logo-badge">Hub v4.0</span>
+          <span class="logo-badge">Hub v5.0</span>
         </div>
       </a>
 
@@ -47,6 +47,9 @@
         <button class="theme-toggle-btn" id="btn-theme-toggle" title="Toggle Light/Dark Theme">
           <i class="fa-solid fa-moon" id="theme-icon"></i>
         </button>
+
+        <!-- Dynamic User Auth Nav Badge -->
+        <div id="auth-nav-container"></div>
       </div>
     </div>
   </header>
@@ -219,6 +222,64 @@
         <div class="tab-pane" id="pricing-tab"></div>
         <div class="tab-pane" id="sdks-tab"></div>
         <div class="tab-pane" id="changelog-tab"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Social Authentication & Registration Gate Modal -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-content" style="max-width: 480px; padding: 0;">
+      <div class="modal-header" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(139, 92, 246, 0.15)); border-bottom: 1px solid var(--border-color);">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="logo-icon" style="width: 36px; height: 36px; font-size: 1.1rem;">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Developer Registration</h3>
+            <span style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700;">Account Authentication</span>
+          </div>
+        </div>
+        <button class="close-btn" id="auth-modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.75rem;">
+        <p id="auth-modal-reason" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
+          Please sign in or register an account using Google, Facebook, or Microsoft to continue exploring API details, code snippets, and live sandboxes.
+        </p>
+
+        <!-- Social Login Provider Buttons -->
+        <div class="social-btn-group">
+          <button class="btn-social btn-google" onclick="loginWithProvider('Google')">
+            <i class="fa-brands fa-google" style="font-size: 1.1rem;"></i> Continue with Google
+          </button>
+          
+          <button class="btn-social btn-facebook" onclick="loginWithProvider('Facebook')">
+            <i class="fa-brands fa-facebook-f" style="font-size: 1.1rem;"></i> Continue with Facebook
+          </button>
+
+          <button class="btn-social btn-microsoft" onclick="loginWithProvider('Microsoft')">
+            <i class="fa-brands fa-microsoft" style="font-size: 1.1rem;"></i> Continue with Microsoft
+          </button>
+        </div>
+
+        <div class="divider-line">OR REGISTER WITH EMAIL</div>
+
+        <!-- Form Registration -->
+        <form onsubmit="registerWithEmail(event)" style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-dim); font-weight: 700; display: block; margin-bottom: 0.25rem;">FULL NAME</label>
+            <input type="text" id="auth-name-input" class="search-input" style="padding: 0.6rem 1rem; font-size: 0.9rem; border-radius: var(--radius-sm);" placeholder="Jane Developer" required />
+          </div>
+
+          <div>
+            <label style="font-size: 0.75rem; color: var(--text-dim); font-weight: 700; display: block; margin-bottom: 0.25rem;">EMAIL ADDRESS</label>
+            <input type="email" id="auth-email-input" class="search-input" style="padding: 0.6rem 1rem; font-size: 0.9rem; border-radius: var(--radius-sm);" placeholder="jane@example.com" required />
+          </div>
+
+          <button type="submit" class="btn-primary" style="justify-content: center; width: 100%; margin-top: 0.5rem; padding: 0.75rem;">
+            <i class="fa-solid fa-user-check"></i> Register & Access Platform
+          </button>
+        </form>
       </div>
     </div>
   </div>

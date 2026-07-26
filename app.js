@@ -1,10 +1,15 @@
-// API Nexus Platform Engine v4.0 (Defensive Guardrails & Search Clear Engine)
+// API Nexus Platform Engine v5.0 (Social Authentication Gate & Registration Engine)
 
 // State Management
 let currentTheme = localStorage.getItem('api_nexus_theme') || 'dark';
 let favoritesSet = new Set(JSON.parse(localStorage.getItem('api_nexus_favorites') || '[]'));
 let recentSearches = JSON.parse(localStorage.getItem('api_nexus_recent_searches') || '[]');
 let comparisonSet = new Set();
+
+// Auth & Gate State
+let currentUser = JSON.parse(localStorage.getItem('api_nexus_authenticated_user') || 'null');
+let apiViewsCount = parseInt(localStorage.getItem('api_nexus_api_views') || '0', 10);
+let pendingApiIdToOpen = null;
 
 let currentView = 'grid'; // 'grid' | 'table'
 let activeCategory = 'All';
@@ -32,6 +37,7 @@ function initApp() {
   applyTheme(currentTheme);
   renderCategoryChips();
   setupEventListeners();
+  updateAuthUI();
   updateStats();
   triggerSearchAndFilter();
 }
@@ -52,6 +58,143 @@ function toggleTheme() {
   const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
   applyTheme(nextTheme);
   showToast(`Switched to ${nextTheme} theme`);
+}
+
+// --- Authentication & Social Login Gate Engine ---
+function updateAuthUI() {
+  const container = document.getElementById('auth-nav-container');
+  if (!container) return;
+
+  if (currentUser) {
+    const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    container.innerHTML = `
+      <div class="user-profile-badge" id="user-profile-btn" onclick="toggleProfileDropdown(event)">
+        <div class="user-avatar">${initials}</div>
+        <span class="user-name">${escapeHtml(currentUser.name)}</span>
+        <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: var(--text-dim);"></i>
+
+        <div class="profile-dropdown" id="profile-dropdown">
+          <div style="padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">${escapeHtml(currentUser.name)}</div>
+            <div style="font-size: 0.75rem; color: var(--text-dim);">${escapeHtml(currentUser.email)}</div>
+            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">● Signed via ${currentUser.provider}</span>
+          </div>
+          <div class="dropdown-item" onclick="logoutUser()">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <button class="btn-primary" onclick="openAuthModal()" style="font-size: 0.85rem; padding: 0.45rem 1rem;">
+        <i class="fa-solid fa-user-plus"></i> Sign In / Register
+      </button>
+    `;
+  }
+}
+
+function toggleProfileDropdown(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('profile-dropdown');
+  if (dropdown) dropdown.classList.toggle('active');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#user-profile-btn')) {
+    document.getElementById('profile-dropdown')?.classList.remove('active');
+  }
+});
+
+function openAuthModal(reasonMessage) {
+  const modal = document.getElementById('auth-modal');
+  const msgEl = document.getElementById('auth-modal-reason');
+  if (msgEl && reasonMessage) {
+    msgEl.textContent = reasonMessage;
+  } else if (msgEl) {
+    msgEl.textContent = "Security Notice: Please register or sign in with Google, Facebook, or Microsoft to unlock unlimited API details and sandbox access.";
+  }
+  if (modal) modal.classList.add('active');
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal')?.classList.remove('active');
+}
+
+function loginWithProvider(providerName) {
+  const mockNames = {
+    Google: "Developer User (Google)",
+    Facebook: "Developer User (Facebook)",
+    Microsoft: "Developer User (Microsoft)"
+  };
+
+  const mockEmails = {
+    Google: "user.dev@gmail.com",
+    Facebook: "user.dev@facebook.com",
+    Microsoft: "user.dev@outlook.com"
+  };
+
+  currentUser = {
+    name: mockNames[providerName] || `${providerName} Developer`,
+    email: mockEmails[providerName] || `user@${providerName.toLowerCase()}.com`,
+    provider: providerName,
+    avatar: initials(mockNames[providerName])
+  };
+
+  localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(currentUser));
+  updateAuthUI();
+  closeAuthModal();
+  showToast(`Successfully registered and signed in via ${providerName}! 🎉`);
+
+  if (pendingApiIdToOpen) {
+    const target = pendingApiIdToOpen;
+    pendingApiIdToOpen = null;
+    openApiModal(target, true);
+  }
+}
+
+function registerWithEmail(event) {
+  if (event) event.preventDefault();
+  const emailInput = document.getElementById('auth-email-input');
+  const nameInput = document.getElementById('auth-name-input');
+
+  const email = emailInput ? emailInput.value.trim() : '';
+  const name = nameInput ? nameInput.value.trim() : '';
+
+  if (!email || !name) {
+    showToast("Please enter your name and valid email address.");
+    return;
+  }
+
+  currentUser = {
+    name: name,
+    email: email,
+    provider: "Email",
+    avatar: initials(name)
+  };
+
+  localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(currentUser));
+  updateAuthUI();
+  closeAuthModal();
+  showToast(`Welcome ${name}! Account registered successfully.`);
+
+  if (pendingApiIdToOpen) {
+    const target = pendingApiIdToOpen;
+    pendingApiIdToOpen = null;
+    openApiModal(target, true);
+  }
+}
+
+function logoutUser() {
+  currentUser = null;
+  localStorage.removeItem('api_nexus_authenticated_user');
+  updateAuthUI();
+  showToast("You have been signed out.");
+}
+
+function initials(str) {
+  if (!str) return 'DV';
+  return str.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
 // --- Favorites Management ---
@@ -162,6 +305,7 @@ function setupEventListeners() {
       closeModal();
       closeCompModal();
       closeCmdKModal();
+      closeAuthModal();
     }
   });
 
@@ -204,6 +348,7 @@ function setupEventListeners() {
   document.getElementById('modal-close-btn')?.addEventListener('click', closeModal);
   document.getElementById('comp-modal-close-btn')?.addEventListener('click', closeCompModal);
   document.getElementById('cmdk-modal-close-btn')?.addEventListener('click', closeCmdKModal);
+  document.getElementById('auth-modal-close-btn')?.addEventListener('click', closeAuthModal);
 }
 
 // --- Autocomplete ---
@@ -496,8 +641,20 @@ function renderTableHtml(apis) {
   `;
 }
 
-// --- 9-Tab API Inspector Drawer (With Defensive Guardrails) ---
-function openApiModal(apiId) {
+// --- 9-Tab API Inspector Drawer with Social Auth Gate ---
+function openApiModal(apiId, isBypassingGate = false) {
+  // Security & Registration Gate check: Prompt social auth after 1 API inspection
+  if (!currentUser && !isBypassingGate) {
+    apiViewsCount++;
+    localStorage.setItem('api_nexus_api_views', apiViewsCount);
+
+    if (apiViewsCount >= 1) {
+      pendingApiIdToOpen = apiId;
+      openAuthModal("Registration Required: Please sign in with Google, Facebook, or Microsoft to inspect API specifications and run sandbox requests.");
+      return;
+    }
+  }
+
   const api = API_DATABASE.find(a => a.id === apiId);
   if (!api) return;
   currentModalApi = api;
