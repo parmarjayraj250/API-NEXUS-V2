@@ -1,4 +1,4 @@
-// API Nexus Platform Engine v7.0 (Firebase Auth State & UI Sync Engine)
+// API Nexus Platform Engine v8.5 (Firebase GitHub & Google Authentication Engine)
 
 // State Management
 let currentTheme = localStorage.getItem('api_nexus_theme') || 'dark';
@@ -86,7 +86,7 @@ function updateAuthUI() {
           <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
             <div style="font-size: 0.9rem; font-weight: 800; color: var(--text-main);">${escapeHtml(currentUser.name)}</div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(currentUser.email)}</div>
-            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">● Firebase Verified</span>
+            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 700; text-transform: uppercase;">● Firebase Verified (${currentUser.provider})</span>
           </div>
           <div class="dropdown-item" onclick="logoutUser()">
             <i class="fa-solid fa-right-from-bracket" style="color: var(--accent-rose);"></i> Sign Out
@@ -134,7 +134,7 @@ function openAuthModal(reasonMessage) {
   if (msgEl && reasonMessage) {
     msgEl.textContent = reasonMessage;
   } else if (msgEl) {
-    msgEl.textContent = "Security Notice: Please sign in with Google to initialize your Firebase profile and unlock unlimited API specs.";
+    msgEl.textContent = "Security Notice: Please sign in with Google or GitHub to initialize your Firebase profile and unlock unlimited API specs.";
   }
   if (modal) modal.classList.add('active');
 }
@@ -146,37 +146,27 @@ function closeAuthModal() {
 window.closeAuthModal = closeAuthModal;
 
 async function loginWithProvider(providerName) {
-  if (providerName === 'Google') {
-    if (window.signInWithGoogleFirebase) {
-      try {
-        await window.signInWithGoogleFirebase();
-        return;
-      } catch (err) {
-        console.error("Firebase Google Auth error:", err);
-        return;
-      }
+  if (providerName === 'Google' && window.signInWithGoogleFirebase) {
+    try {
+      await window.signInWithGoogleFirebase();
+      return;
+    } catch (err) {
+      console.error("Firebase Google Auth Error:", err);
+      return;
     }
   }
 
-  fallbackSocialLogin(providerName);
+  if (providerName === 'GitHub' && window.signInWithGithubFirebase) {
+    try {
+      await window.signInWithGithubFirebase();
+      return;
+    } catch (err) {
+      console.error("Firebase GitHub Auth Error:", err);
+      return;
+    }
+  }
 }
 window.loginWithProvider = loginWithProvider;
-
-function fallbackSocialLogin(providerName = 'Google') {
-  currentUser = {
-    uid: `usr_${Date.now()}`,
-    name: `${providerName} Developer`,
-    email: `developer@${providerName.toLowerCase()}.com`,
-    photoURL: "",
-    provider: providerName
-  };
-
-  localStorage.setItem('api_nexus_authenticated_user', JSON.stringify(currentUser));
-  updateAuthUI();
-  closeAuthModal();
-  showToast(`Signed in via ${providerName}! 🎉`);
-}
-window.fallbackSocialLogin = fallbackSocialLogin;
 
 function registerWithEmail(event) {
   if (event) event.preventDefault();
@@ -673,7 +663,7 @@ function openApiModal(apiId, isBypassingGate = false) {
 
     if (apiViewsCount >= 1) {
       pendingApiIdToOpen = apiId;
-      openAuthModal("Firebase Auth Gate: Please sign in with Google to initialize your Firebase profile and unlock unlimited API specs.");
+      openAuthModal("Firebase Auth Gate: Please sign in with Google or GitHub to initialize your Firebase profile and unlock unlimited API specs.");
       return;
     }
   }

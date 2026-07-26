@@ -40,6 +40,7 @@ const app = !getApps().length ? initializeApp(activeConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Provider Instances
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
@@ -64,19 +65,30 @@ export async function signInWithGithubFirebase() {
   return handleSocialLogin(githubProvider, "github.com");
 }
 
+/**
+ * Common Firebase OAuth Popup Handler for Google & GitHub
+ */
 async function handleSocialLogin(providerInstance, providerName) {
   try {
+    console.log(`[Firebase Auth] Initiating signInWithPopup for ${providerName}...`);
+    
+    // Official Firebase OAuth Popup
     const result = await signInWithPopup(auth, providerInstance);
     const user = result.user;
 
-    console.log(`✅ Firebase Auth Success (${providerName}):`, user.email, "UID:", user.uid);
+    console.log(`✅ [Firebase Auth Success] User authenticated via ${providerName}:`, {
+      uid: user.uid,
+      displayName: user.displayName,
+      email: user.email,
+      photoURL: user.photoURL
+    });
 
     // Reference Firestore user document: users/{user.uid}
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
-      // Create new user document in Firestore
+      // Create new user document in Firestore with required attributes
       await setDoc(userRef, {
         uid: user.uid,
         displayName: user.displayName || user.email || "Developer User",
@@ -86,13 +98,13 @@ async function handleSocialLogin(providerInstance, providerName) {
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp()
       });
-      console.log("📝 Firestore: Created new user document at users/" + user.uid);
+      console.log(`📝 [Firestore Document Created] Document users/${user.uid} created.`);
     } else {
       // Update lastLogin timestamp for existing user
       await updateDoc(userRef, {
         lastLogin: serverTimestamp()
       });
-      console.log("⏱️ Firestore: Updated lastLogin timestamp at users/" + user.uid);
+      console.log(`⏱️ [Firestore Document Updated] users/${user.uid} lastLogin timestamp updated.`);
     }
 
     const userData = {
@@ -108,17 +120,27 @@ async function handleSocialLogin(providerInstance, providerName) {
     if (window.closeAuthModal) window.closeAuthModal();
 
     if (window.showToast) {
-      window.showToast(`Welcome ${user.displayName || user.email}! Firebase Sign-In Successful.`);
+      window.showToast(`Welcome ${user.displayName || user.email}! Authenticated via ${providerName === "google.com" ? "Google" : "GitHub"}.`);
     }
 
     return user;
   } catch (error) {
-    console.error(`❌ Firebase Auth Error (${providerName}):`, error.code, error.message);
-    
+    // Print complete Firebase error code and message to browser console for debugging
+    console.error("❌ [Firebase Auth Error Details]:", {
+      code: error.code,
+      message: error.message,
+      email: error.customData?.email,
+      credential: error.credential
+    });
+
     if (error.code === 'auth/popup-closed-by-user') {
-      if (window.showToast) window.showToast("Sign-In popup closed.");
+      if (window.showToast) window.showToast("Sign-In popup was closed before completion.");
+    } else if (error.code === 'auth/account-exists-with-different-credential') {
+      if (window.showToast) window.showToast("Account exists with a different credential. Please sign in using your existing provider.");
+    } else if (error.code === 'auth/operation-not-allowed') {
+      if (window.showToast) window.showToast(`Firebase Notice: Enable ${providerName} in Firebase Console -> Authentication -> Sign-in method.`);
     } else {
-      if (window.showToast) window.showToast(`Firebase Auth: ${error.message}`);
+      if (window.showToast) window.showToast(`Firebase Auth Error: [${error.code}] ${error.message}`);
     }
     throw error;
   }
@@ -141,7 +163,7 @@ export async function firebaseSignOutUser() {
 // --- Persistent Auth Observer ---
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    console.log("Firebase Auth Observer: Signed In ->", user.email);
+    console.log("Firebase Auth Observer: User Signed In ->", user.email, "UID:", user.uid);
     const userData = {
       uid: user.uid,
       name: user.displayName || user.email || "Developer User",
@@ -154,7 +176,7 @@ onAuthStateChanged(auth, async (user) => {
     if (window.updateAuthUI) window.updateAuthUI();
     if (window.closeAuthModal) window.closeAuthModal();
   } else {
-    console.log("Firebase Auth Observer: Signed Out");
+    console.log("Firebase Auth Observer: User Signed Out");
     localStorage.removeItem('api_nexus_authenticated_user');
     if (window.updateAuthUI) window.updateAuthUI();
   }
